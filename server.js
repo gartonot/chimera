@@ -6,10 +6,13 @@ const { Server } = require('socket.io');
 const path = require('path');
 
 const { startTwitchChat } = require('./twitch');
+const { startYouTubeChat } = require('./youtube');
+
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
+
 
 // Отдача фронта
 app.use(express.static(path.join(__dirname, 'public')));
@@ -37,3 +40,9 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     console.log(`🚀 Chimera запущен на http://localhost:${PORT}`);
 });
+
+
+// ▶️ Youtube-чат
+const YOUTUBE_STREAM_URL = 'https://www.youtube.com/watch?v=Xy6nHsUJrsc';
+
+startYouTubeChat(io, YOUTUBE_STREAM_URL);
