@@ -25,7 +25,7 @@ interface IChatPayload {
 }
 
 const messages = ref<IChatPayload[]>([]);
-const socket = io('http://localhost:3000');
+const socket = io(import.meta.env.VITE_BACKEND_URL);
 
 onMounted(() => {
   const history = JSON.parse(localStorage.getItem('chimera-chat') || '[]');
