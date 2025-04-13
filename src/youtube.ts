@@ -1,7 +1,9 @@
-const { google } = require('googleapis');
+import { google, youtube_v3 } from 'googleapis';
+import { Server as SocketIOServer } from 'socket.io';
+import { IChatPayload, IServerToClientEvents } from './shared/interfaces';
 
 // --- Парсинг videoId из ссылки
-function getVideoIdFromLink(link) {
+function getVideoIdFromLink(link: string) {
     try {
         const parsed = new URL(link);
         if (parsed.hostname === 'youtu.be') {
@@ -10,7 +12,7 @@ function getVideoIdFromLink(link) {
         if (parsed.hostname.includes('youtube.com')) {
             return parsed.searchParams.get('v');
         }
-    } catch (error) {
+    } catch (_) {
         console.warn('[YouTube] Невалидная ссылка:', link);
     }
 
@@ -18,26 +20,35 @@ function getVideoIdFromLink(link) {
 }
 
 // --- Получение liveChatId по videoId
-async function getLiveChatId(videoId, apiKey) {
+async function getLiveChatId(videoId: string, apiKey: string) {
+    const youtube = google.youtube({ version: 'v3', auth: apiKey });
+
     try {
-        const youtube = google.youtube({ version: 'v3', auth: apiKey });
         const res = await youtube.videos.list({
-            part: 'liveStreamingDetails',
-            id: videoId,
+            part: ['liveStreamingDetails'],
+            id: [videoId],
         });
         const item = res.data.items?.[0];
 
         return item?.liveStreamingDetails?.activeLiveChatId || null;
-    } catch (err) {
+    } catch (error) {
+        const err = error as Error;
         console.error('[YouTube] Ошибка при получении liveChatId:', err.message);
         return null;
     }
 }
 
 // --- Запуск YouTube чата
-async function startYouTubeChat(io, streamUrl) {
+async function startYouTubeChat(
+    io: SocketIOServer<IServerToClientEvents>,
+    streamUrl: string
+) {
     const apiKey = process.env.YOUTUBE_API_KEY;
     const pollInterval = parseInt(process.env.YOUTUBE_POLL_INTERVAL || '12000', 10);
+
+    if (!apiKey) {
+        throw new Error('❌ Не найден YOUTUBE_API_KEY');
+    }
 
     const videoId = getVideoIdFromLink(streamUrl);
     if (!videoId) {
@@ -53,12 +64,11 @@ async function startYouTubeChat(io, streamUrl) {
 
     console.log(`[YouTube] ✅ Чат подключён к videoId: ${videoId}, liveChatId: ${liveChatId}`);
 
-
     const youtube = google.youtube({ version: 'v3', auth: apiKey });
-    let nextPageToken = null;
+    let nextPageToken: string | null = null;
 
     // Мини-кэш сообщений для защиты от дублей
-    const seenMessages = new Map(); // id → timestamp
+    const seenMessages: Map<string, number> = new Map(); // id → timestamp
 
     // Очистка кэша каждые 5 минут (можно менять)
     setInterval(() => {
@@ -70,32 +80,39 @@ async function startYouTubeChat(io, streamUrl) {
 
     // --- Основной polling-функция
     async function pollChat() {
+        if (!liveChatId) {
+            console.warn('[YouTube] liveChatId отсутствует, пропускаем poll');
+            return;
+        }
+
         try {
             const res = await youtube.liveChatMessages.list({
                 liveChatId,
-                part: 'snippet,authorDetails',
+                part: ['snippet', 'authorDetails'],
                 maxResults: 50,
                 pageToken: nextPageToken || undefined,
             });
 
-            const messages = res.data.items || [];
-            nextPageToken = res.data.nextPageToken;
+            const messages: youtube_v3.Schema$LiveChatMessage[] = res.data.items || [];
 
             messages.forEach((item) => {
-                if (seenMessages.has(item.id)) return;
+                if (!item.id || seenMessages.has(item.id)) return;
                 seenMessages.set(item.id, Date.now());
 
-                const payload = {
+                const payload: IChatPayload = {
                     source: 'youtube',
-                    user: item.authorDetails.displayName,
-                    message: item.snippet.displayMessage,
-                    timestamp: item.snippet.publishedAt,
-                    avatar: item.authorDetails.profileImageUrl,
+                    user: item.authorDetails?.displayName || 'Unknown',
+                    message: item.snippet?.displayMessage || '',
+                    timestamp: item.snippet?.publishedAt || new Date().toISOString(),
+                    avatar: item.authorDetails?.profileImageUrl || null,
                 };
 
                 io.emit('chatMessage', payload);
             });
-        } catch (err) {
+
+            nextPageToken = res.data.nextPageToken ?? null;
+        } catch (error) {
+            const err = error as Error & { response?: { data?: { error?: { message?: string } } } };
             console.error('[YouTube] Ошибка при получении сообщений:', err.response?.data?.error?.message || err.message);
         }
     }

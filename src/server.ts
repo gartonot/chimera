@@ -1,8 +1,9 @@
 require('dotenv').config();
 const express = require('express');
 const http = require('http');
-const { Server } = require('socket.io');
+import { Server as SocketIOServer } from 'socket.io';
 const path = require('path');
+import { IServerToClientEvents } from './shared/interfaces'
 
 // Подключаем сервисы ютуба и твича
 const { startTwitchChat } = require('./twitch');
@@ -11,11 +12,10 @@ const { startYouTubeChat } = require('./youtube');
 // Настройка сервера и вебсокетов
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
-
+const io = new SocketIOServer<IServerToClientEvents>(server);
 
 // Отдача статики фронта
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.resolve(__dirname, '../public')));
 
 // WebSocket
 io.on('connection', (socket) => {
