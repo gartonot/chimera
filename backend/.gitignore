@@ -1,8 +1,8 @@
 # Node modules
-node_modules/
+../node_modules/
 
 # Env vars
-.env
+backend/.env
 
 # Logs
 *.log
