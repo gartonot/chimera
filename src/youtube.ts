@@ -44,7 +44,7 @@ async function startYouTubeChat(
     streamUrl: string
 ) {
     const apiKey = process.env.YOUTUBE_API_KEY;
-    const pollInterval = parseInt(process.env.YOUTUBE_POLL_INTERVAL || '12000', 10);
+    const pollInterval = parseInt(process.env.YOUTUBE_POLL_INTERVAL || '3000', 10);
 
     if (!apiKey) {
         throw new Error('❌ Не найден YOUTUBE_API_KEY');
@@ -89,7 +89,7 @@ async function startYouTubeChat(
             const res = await youtube.liveChatMessages.list({
                 liveChatId,
                 part: ['snippet', 'authorDetails'],
-                maxResults: 50,
+                maxResults: 25,
                 pageToken: nextPageToken || undefined,
             });
 
