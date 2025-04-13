@@ -1,4 +1,3 @@
-// twitch.js
 const tmi = require('tmi.js');
 
 function startTwitchChat(io) {
