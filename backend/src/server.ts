@@ -31,7 +31,7 @@ io.on('connection', (socket) => {
 startTwitchChat(io);
 
 // ▶️ Youtube-чат запускается
-const YOUTUBE_STREAM_URL = 'https://www.youtube.com/watch?v=Q-ttbX02RWo';
+const YOUTUBE_STREAM_URL = process.env.YOUTUBE_STREAM_URL || 'https://www.youtube.com/watch?v=Q-ttbX02RWo';
 startYouTubeChat(io, YOUTUBE_STREAM_URL);
 
 
