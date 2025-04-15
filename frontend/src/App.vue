@@ -10,6 +10,8 @@
         <b class="user-name">{{ msg.user }}</b>: {{ msg.message }}
       </div>
     </div>
+
+    <small class="release-label">Release v.1.1.0</small>
   </div>
 </template>
 
@@ -72,5 +74,8 @@ onMounted(() => {
 }
 .user-name {
   margin-inline-start: 5px;
+}
+.release-label {
+  color: #b7b7b7;
 }
 </style>
