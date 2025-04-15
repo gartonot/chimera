@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <div id="chat">
+    <div id="chat" ref="chatRef">
       <div
           v-for="(msg, index) in messages"
           :key="index"
@@ -16,7 +16,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, nextTick } from 'vue';
 import { io } from 'socket.io-client';
 
 interface IChatPayload {
@@ -27,8 +27,18 @@ interface IChatPayload {
   avatar?: string | null;
 }
 
+const chatRef = ref<HTMLDivElement | null>(null);
 const messages = ref<IChatPayload[]>([]);
 const socket = io(import.meta.env.VITE_BACKEND_URL);
+
+const scrollToBottom = () => {
+  nextTick(() => {
+    chatRef.value?.scrollTo({
+      top: chatRef.value.scrollHeight,
+      behavior: 'smooth',
+    });
+  });
+}
 
 onMounted(() => {
   const history = JSON.parse(localStorage.getItem('chimera-chat') || '[]');
@@ -37,6 +47,7 @@ onMounted(() => {
   socket.on('chatMessage', (msg: IChatPayload) => {
     messages.value.push(msg);
     localStorage.setItem('chimera-chat', JSON.stringify(messages.value.slice(-200)));
+    scrollToBottom();
   });
 });
 </script>
