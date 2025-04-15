@@ -7,7 +7,7 @@
           class="chat-line"
       >
         <b :class="[msg.source === 'youtube' ? 'color-youtube': 'color-twitch']">[{{ msg.source }}]</b>
-        <b>{{ msg.user }}</b>: {{ msg.message }}
+        <b class="user-name">{{ msg.user }}</b>: {{ msg.message }}
       </div>
     </div>
   </div>
@@ -52,7 +52,7 @@ onMounted(() => {
   opacity: 0;
   transform: translateY(10px);
   animation: fadeIn 0.3s ease forwards;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
 }
 @keyframes fadeIn {
   to {
@@ -69,5 +69,8 @@ onMounted(() => {
   background-color: #9146FF;
   padding: 3px;
   display: inline-block;
+}
+.user-name {
+  margin-inline-start: 5px;
 }
 </style>
