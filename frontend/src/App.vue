@@ -6,7 +6,8 @@
           :key="index"
           class="chat-line"
       >
-        <b>[{{ msg.source }}] {{ msg.user }}:</b> {{ msg.message }}
+        <b :class="[msg.source === 'youtube' ? 'color-youtube': 'color-twitch']">[{{ msg.source }}]</b>
+        <b>{{ msg.user }}</b>: {{ msg.message }}
       </div>
     </div>
   </div>
@@ -58,5 +59,15 @@ onMounted(() => {
     opacity: 1;
     transform: translateY(0);
   }
+}
+.color-youtube {
+  background-color: #FF0000;
+  padding: 3px;
+  display: inline-block;
+}
+.color-twitch {
+  background-color: #9146FF;
+  padding: 3px;
+  display: inline-block;
 }
 </style>
